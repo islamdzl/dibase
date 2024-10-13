@@ -30,6 +30,8 @@ request Server
         ---------------------------------------
                 "formate" : "new password"
         ---------------------------------------
+                "download" : "file name"
+        ---------------------------------------
         
             }
         }
@@ -136,7 +138,9 @@ set data on data_bases     Write
             "data":{
                 "name":"islam",
                 "age":17
-            }
+            },
+             || path : ["path/to/yor/object"],
+             || "clear_end": true/false
         }
     }
 }
@@ -149,15 +153,27 @@ get data on data_bases     Read
     "data_base":{
         "get":{
             "password":"",
-            "data_base":"islam"
+            "name":"islam",
+             || path : ["path/to/yor/object"],
+             || "clear_end": true/false
         }
     }
 }
-*******************
-response
+-------------------------------------------------------------------
+response 
 {
     "data_base":{
         "get":{
+            "name":"data base name"
+            "data":{}
+        }
+    }
+}
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+{
+    "data_base":{
+        "get":{
+            "path":["path/tor/object"]
             "name":"data base name"
             "data":{}
         }
@@ -170,6 +186,12 @@ response
         "ping":"my"
     }
  }
+------------------------------------------------------------------
+{
+    "data_base":{
+        "not_base":"data base name"
+    }
+}
 //////////////////////////////////////////////////////////////////
 
 ________________________________________________________________________________
@@ -257,4 +279,4 @@ ________________________________________________________________________________
 
                 <h5>islam</h5>
             </div>
-        </div># dibase
+        </div>

@@ -6,6 +6,7 @@ const create = async(file_name)=>{
     return await new Promise((resolve, rejecte)=>{
         fs.open(path + file_name + '.json', 'w', (err, file)=>{
             err? rejecte(err) : resolve(file)
+            update({file_name, data:{}})
         })
     })
 }

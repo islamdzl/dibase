@@ -4,9 +4,17 @@
                 ALL:[ws.id, ws.id, ws.id],
                 databasename:[{ws.id, ws},{ws.id, ws}...]
             }
+
+            clients_and_info[ws.id] = {R:{ basename:true },W:{}}
 */
 const WebSocket = require('ws')
 const file_system = require('./file_system')
+const prcess_data = require('./process_data')
+const {exec} = require('child_process')
+const path = require('path')
+const fs = require('fs');
+const zlib = require('zlib');
+const { pipeline } = require('stream');
 var clients_and_info = {}
 var data_base_clients = {} // {"database name":[{'ws.id':ws}]}
 var clients_err_password = {}
@@ -17,14 +25,20 @@ var time = 0
 setInterval(() => {
     time = time + 5
 }, 5000);
-const main = (server)=>{
+const main = (server, __SERVER)=>{
     const wss = new WebSocket.Server({server})
-
     wss.on('connection' , async(ws)=>{
         console.log('new client')
         ws.on('message' , async(message)=>{
-            const data = JSON.parse(message.toString('utf-8')).data_base
+            // delete require.cache[require.resolve('../DATA/_confige.json')]
             const confige = require('../DATA/_confige.json')
+            var data = {}
+            try{
+                data = JSON.parse(message.toString('utf-8')).data_base
+            }catch{
+                ws.send('Error Parsing yor data')
+                return
+            }
             // console.log('new message : ', data)
             if (!ws._id) {
                 ws._id = String(Math.floor(Math.random()*100000000))
@@ -32,40 +46,53 @@ const main = (server)=>{
             if (!ws_block[ws._id]) {
                 ws_block[ws._id] = {band :false, attempts: confige.__server.password_attempts}
             }
-            try{
+            // try{
+                let CAIS = clients_and_info[ws.id]
                 switch (true) {
                     case (typeof data.set != 'undefined'):
-                        let CAIS = clients_and_info[ws.id]
-                        if (__RIN && confige.safety[data.set.data_base].rin_state && CAIS[data.set.data_base] == confige.safety[data.set.data_base].password && data_base_clients[data.set.data_base]) {
+                        if (! confige.safety[data.set.data_base]) {
+                            return
+                        }
+                        if (__RIN && confige.safety[data.set.data_base].rin_state && CAIS.W[data.set.data_base] == true) {
+                            if (data.set.path || data.set.setpath) {
+                                let DATA_ = await prcess_data.set({dataA:require('../DATA/' + data.set.data_base),dataB:data.set.data,paths:{path:data.set.path, setpath:data.set.setpath}, wss:data_base_clients[data.set.data_base],base_name:data.set.data_base,clear_end:data.set.clear_end, wsid:ws.id})
+                                await file_system.update({file_name:data.set.data_base,data:DATA_})
+                                return
+                            }
                                 data_base_clients[data.set.data_base].forEach((client)=>{
-                                    console.log('send To >>', client.id)
-                                    if (client.id != ws.id) {
-                                        client.send(JSON.stringify({_data_base:{name:data.set.data_base,data:data.set.data}}));
+                                    console.log('Send To >>', client.id)
+                                    if (true) {
+                                        client.send(JSON.stringify({data_base:{get:{name:data.set.data_base,data:data.set.data}}}));
                                     } 
                                 })
-                                file_system.update({file_name:data.set.data_base, data:data.set.data})
+                                await file_system.update({file_name:data.set.data_base, data:data.set.data})
                         }
                     break;
                     case (typeof data.get != 'undefined'):
-                        let CAIG = clients_and_info[ws.id]
-                        if (__RIN && confige.safety[data.get.data_base].rin_state  &&  CAIG[data.get.data_base] == confige.safety[data.get.data_base].password || CAIG[data.get.data_base] == confige.safety[data.get.data_base].read_password) {
-                            if (confige.safety[data.get.data_base]) {
+                        if (! confige.safety[data.get.name]) {
+                            ws.send(`{"not_base":"${data.get.name}"}`)
+                            return
+                        }
+                        if (__RIN && confige.safety[data.get.name].rin_state && CAIS.W[data.get.name] == true || CAIS.R[data.get.name] == true) {
+                            if (data.get.path) {
+                                let DATA_ = await prcess_data.get({dataA:require('../DATA/' + data.get.name),path:data.get.path})
                                 ws.send(JSON.stringify({
                                     data_base:{
                                         get:{
-                                            name:data.get.data_base,
-                                            data:require('../DATA/' + data.get.data_base)
+                                            name:data.get.name,
+                                            data:DATA_
                                         }
                                     }
                                 }))
+                                return
                             }
-                        }
-                        if (confige.safety[data.get.data_base] && data.get.password == confige.safety[data.get.data_base].password) {
+                            delete require.cache[require.resolve('../DATA/' + data.get.name)]
+                            let all_data = await require('../DATA/' + data.get.name)
                             ws.send(JSON.stringify({
                                 data_base:{
                                     get:{
-                                        name:data.get.data_base,
-                                        data:require('../DATA/' + data.get.data_base)
+                                        name:data.get.name,
+                                        data:all_data
                                     }
                                 }
                             }))
@@ -80,40 +107,47 @@ const main = (server)=>{
                     case (typeof data.set_domain != 'undefined'):
                         ws.id = data.set_domain.id
                         console.log('id : ',data.set_domain.id)
-                        let _DOMINS = {}
+                        let domain_bases = []
                         if (ws.diclar) {
                             return
+                        }
+                        if (!clients_and_info[ws.id]) {
+                            clients_and_info[ws.id] = {R:{},W:{},domains:[]}
                         }
                         data.set_domain.domains.forEach(async(element)=>{
                             if (confige.safety[element.name]) {
                                     if (element.password == confige.safety[element.name].password || element.password == confige.safety[element.name].read_password) {
+                                        domain_bases.unshift(element.name)
                                     let add_client = confige.safety[element.name].clients.some(client => client == ws.id)
-                                    console.log(!add_client)
                                     if (! add_client) {
-                                        console.log('ssssssssss')
                                         let EDconfige = confige
                                         EDconfige.safety[element.name].clients.unshift(ws.id)
                                         await file_system.update({file_name:'_confige',data:EDconfige})
-                                    }else{console.log('error in add domain to ws client')}
-                                    _DOMINS[element.name] = element.password
+                                    }
                                     if (!data_base_clients[element.name]) {
                                         data_base_clients[element.name] = []
+                                    }
+                                    if (element.password == confige.safety[element.name].password) {
+                                        clients_and_info[ws.id].R[element.name] = true
+                                        clients_and_info[ws.id].W[element.name] = true
+                                    }else{
+                                        clients_and_info[ws.id].R[element.name] = true
                                     }
                                     /* 
                                     data_base_clients : {
                                         ALL:[ws.id, ws.id, ws.id],
-                                        databasename:[]
+                                        ws.id : databasename:database
                                     }
                                     */
-                                data_base_clients[element.name].unshift(ws)  
+                                    data_base_clients[element.name].unshift(ws)  
                                 }
                             }
                         })
+                        clients_and_info[ws.id].domains = domain_bases
                         if (!data_base_clients['ALL']) {
                             data_base_clients['ALL'] = []
                         }
                         data_base_clients['ALL'].unshift(ws.id) // add ws.id in data_base_clients 'ALL'
-                        clients_and_info[data.set_domain.id] = _DOMINS
                         ws.diclar = true
                         break
                     case (typeof data.create_base != 'undefined'):
@@ -128,18 +162,17 @@ const main = (server)=>{
                     default:
                         break;
                 }
-            }catch{}
+            // }catch{
+            //     console.log('skap process !!!')
+            // }
         })
         ws.on('close' , ()=> {
             ws.diclar = false
-            try{
-                let keys = Object.keys(clients_and_info[ws.id])
-                keys.forEach((base_name)=>{
-                    data_base_clients[base_name] = data_base_clients[base_name].filter((item)=>item.id !== ws.id)
-                }) 
-                delete clients_and_info[ws.id]
-                data_base_clients['ALL'] = data_base_clients['ALL'].filter((item)=>item !== ws.id)
-            }catch{}
+            clients_and_info[ws.id].domains.forEach((base_name)=>{
+                data_base_clients[base_name] = data_base_clients[base_name].filter((item)=>item.id !== ws.id)
+            }) 
+            data_base_clients['ALL'] = data_base_clients['ALL'].filter((item)=>item !== ws.id)
+            delete clients_and_info[ws.id]
             console.log('client disconnect : ' ,ws.id)
         })
     })
@@ -218,14 +251,15 @@ const main = (server)=>{
         }
     }
     const ADMINS_SERVER = async(data, ws)=>{
+        delete require.cache[require.resolve('../DATA/_confige.json')]
         let confige = require('../DATA/_confige.json')
         if (! admins_ws.server.some((client)=>client.id == ws.id)) {
             admins_ws.server.unshift(ws)
         }
-        if (typeof clients_err_password[ws] !== 'object') { 
-            clients_err_password[ws]= {attempts:0,band:false}       
+        if ( ! clients_err_password[ws.id]) { 
+            clients_err_password[ws.id]= {attempts:0,band:false}       
         }
-        if (data.password === confige.__server.password && ! clients_err_password[ws].band) {
+        if (data.password == confige.__server.password && ! clients_err_password[ws.id].band) {
             if (data.exec) {
                     let EDconfige = confige
                     switch (true) {
@@ -251,8 +285,48 @@ const main = (server)=>{
                         break
                     case (typeof data.exec.formate != 'undefined'):
                         await formate(data.exec.formate)
-                        .then(async()=>await resend(ws,'server'))
+                        console.log('FORMATE')
+                        __SERVER.close(()=>{
+                            exec('node server.js',(err, stdout, stderr)=>{
+                                if (err) {
+                                    console.log('ERR reboot')
+                                    return
+                                }
+                                console.log('RE boote')
+                                    console.log(stdout)
+                                    console.log(stderr)
+                                }) 
+                            })
+                        break
+                    case (typeof data.exec.download != 'undefined'):
+                        const zipDirectory = (sourceDir, outPath)=>{
+                            const output = fs.createWriteStream(outPath);
+                            const archive = zlib.createGzip();
+                            
+                            const stream = fs.createReadStream(sourceDir);
                         
+                            pipeline(stream, archive, output, (err) => {
+                                if (err) {
+                                    console.error('Failed to compress directory:', err);
+                                } else {
+                                    console.log('Directory compressed successfully');
+                                }
+                            });
+                        }
+                        let sourceDir = `../DATA/${data.exec.download}.json`;
+                        const outPath = `../TEMPS/${data.exec.download}.zip`;
+                        if (data.exec.download == 'module') {
+                            sourceDir = '../MODULE'
+                        }
+                        zipDirectory(sourceDir, outPath);
+                        ws.send(JSON.stringify({
+                            data_base:{
+                                file:{
+                                    name:data.exec.download,
+                                    data:fs.readFile(outPath)
+                                }
+                            }
+                        }))
                         break
                     default:
                         ws.send(JSON.stringify({
@@ -262,20 +336,15 @@ const main = (server)=>{
                         await resend(ws, 'server')
                         break;
                 }
-            }else{
-                admins_ws.unshift(ws) 
-                ws.send(JSON.stringify({
-                    login:false
-                }))
             }
         }else{
             ws.send(JSON.stringify({
                 login:false,
                 type:'server'
             }))
-            clients_err_password[ws].attempts = clients_err_password[ws].attempts + 1
-            if (confige.__server.password_attempts <= clients_err_password[ws].attempts) {
-                clients_err_password[ws].band = true
+            clients_err_password[ws.id].attempts = clients_err_password[ws.id].attempts + 1
+            if (confige.__server.password_attempts <= clients_err_password[ws.id].attempts) {
+                clients_err_password[ws.id].band = true
                 console.log('BAN ***')
             }
         }
@@ -300,7 +369,7 @@ const resend = async(ws, type)=> {
                 files_size:files_size
             })) 
         })
-    }if (type == 'error') {
+    }else if (type == 'error') {
         ws.send(JSON.stringify({
             type:"error",
         }))

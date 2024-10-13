@@ -11,13 +11,11 @@ app.use(cors({
     origin:'*'
 }))
 app.use(express.static('FILES'))
- app.get('/fonts:font',(req,res)=>{ 
+app.get('/fonts:font',(req,res)=>{ 
     res.sendFile(path.join(__dirname, 'FILES' ,'fonts',req.params.font))
- }) 
-web_socket(server)
-
-
-server.listen(PORT, ()=>{
-    console.log(`Server started in port : ${PORT}`)
+}) 
+const __SERVER = server.listen(PORT, ()=>{
+     console.log(`Server started in port : ${PORT}`)
 })  
+web_socket(server, __SERVER)
 
