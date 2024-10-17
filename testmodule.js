@@ -16,29 +16,18 @@ const domains ={
 const DIB = new DIBASE('ws://localhost:2007',domains)
 
 // DIB.help(true)
-const path = ["islam"];
-const me_data = {string:"sd"}; 
 DIB.base.islam.onload = async(data)=>{
-    // DIB.base.islam.clear(1)
-    DIB.base.islam.set(me_data, path)
-    // DIB.base.islam.change()
-    const random = "abcdef ghijk lmnop qrstu vwxyz "
-    let leps = 0
-    while (true) {
-        leps ++
-        let R = ""
-         for (let i = 0; i < 100000; i++) {
-            let rt = Math.floor(Math.random()*10)+1
-            for (let e = 0; e < rt; e++) {
-                let rr = Math.floor(Math.random()*26)
-                R += random[rr]
-                
-            }
-        }   
-
-        DIB.base.islam.set({[leps]: R},path)
-    }
+    console.log(data)
 } 
+DIB.base.islam.onerror = async({ base_not_access })=>{
+    if (base_not_access) {
+        await DIB.creat_data_base('islamdzl', {
+            name:'islam',
+            password:'12345678',
+            read_password:'12345678r'
+        })
+    }
+}
 DIB.base.islam.onchange = ({dataA, dataB})=>{
     console.log('dataB : ',JSON.stringify(dataB))
         // DIB.base.islam.set({numbers:dataB.islam.path.your.numbers +1}, path)

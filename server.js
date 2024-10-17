@@ -14,6 +14,9 @@ app.use(express.static('FILES'))
 app.get('/fonts:font',(req,res)=>{ 
     res.sendFile(path.join(__dirname, 'FILES' ,'fonts',req.params.font))
 }) 
+app.get('/readme',(req,res)=>{ 
+    res.sendFile(path.join(__dirname,'README.md'))
+}) 
 const __SERVER = server.listen(PORT, ()=>{
      console.log(`Server started in port : ${PORT}`)
 })  

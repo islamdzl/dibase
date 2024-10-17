@@ -386,7 +386,7 @@
     </div>
     <script>
         const DOM_ALL = document.getElementById('ALL')
-        var socket = new WebSocket(`wss://${location.host}`)
+        var socket = new WebSocket(`ws${location.protocol == 'http:' ? "" :"w"}://${location.host}`)
         var __THIS_BASE
         var __SAVELOGE = false
         var __PING

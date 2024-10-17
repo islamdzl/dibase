@@ -4,7 +4,15 @@ class DIBASE {
         this.url = url
         this.user_data = user_data
         this.base = {}
+        this.cach_message
+        this.log = (P, message)=>{
+            console[P]('DIBASE :',message)
+        }
         this.socket = new Web_Socket(url)
+            this.socket.onerror = (err)=>{
+                this.log('error','Error connecting on server DIBASE')
+                return
+            }
         this.socket.onopen = ()=>{
             this.socket.send(JSON.stringify({
                 data_base:{
@@ -23,12 +31,13 @@ class DIBASE {
                     }
                 }))
             })
-            console.log('Open Data Base!')
+            this.log('log','Open Data Base Server!')
             this.onconnect()
         }
         this.socket.onmessage = async(message)=>{
             const data = JSON.parse(message.data)
-            // console.log(">> message : ",JSON.stringify(data))
+            this.cach_message = data
+            console.log(">> message : ",JSON.stringify(data))
             if (data.data_base) {
                 switch (true) {
                     case (typeof data.data_base.get != "undefined"):
@@ -46,19 +55,24 @@ class DIBASE {
                         let beforedata = await this.base[data.data_base.get.name].data
                         this.base[data.data_base.get.name].data = data.data_base.get.data
                         if (! this.base[data.data_base.get.name].load) {
+                            this.log('info',`Open base : ${data.data_base.get.name}!`)
                             this.base[data.data_base.get.name].onload(data.data_base.get.data)
                             this.base[data.data_base.get.name].load = true
                         }else{
                             this.base[data.data_base.get.name].onchange({dataA:beforedata, dataB:data.data_base.get.data})
                         }
                         break;
-                    default:
-                        if (data.data_base.not_base) {
-                            this[data.data_base.not_base].onerror('Not data base name\nDifficulty in communication/access')
+                        default:
+                            break;
                         }
-                        break;
-                }
-            }
+                    }
+                    if (data.data_base.not_base) {
+                        this.log('error',`Not data base name : ${data.data_base.not_base}\nDifficulty in communication/access`)
+                        this.base[data.data_base.not_base].onerror({ base_not_access : true })
+                    }
+                    if (data.type == 'server' && !data.login) {
+                        this.log('error',`Error in server password!`)
+                    }
         }
         this.user_data.domains.forEach(({name, password}) => {
             this.base[name] = {
@@ -89,7 +103,7 @@ class DIBASE {
                             }
                         }
                     }))
-                    console.log('sended')
+                    // console.log('sended')
                 },
                 get:async(path)=>{
                     if (path) {
@@ -116,7 +130,7 @@ class DIBASE {
                         }
                     }))
                 },
-                setpath:async(path, clear_end)=>{
+                creat_path:async(path, clear_end)=>{
                     this.socket.send(JSON.stringify({
                         data_base:{
                             set:{
@@ -142,6 +156,40 @@ class DIBASE {
 
     }
     onconnect (){}
+    object_to_arrey(object) {
+        return {keys:new Object.keys(object), values: new Object.values(object)}
+    }
+    creat_data_base(password, data){
+        this.socket.send(JSON.stringify({
+            data_base:{
+                admins_server:{
+                    no_admin:true,
+                    password:password,
+                    exec:{
+                        create_base : { 
+                            password:data.password, 
+                            read_password:data.read_password, 
+                            name:data.name
+                        }
+                    }
+                }
+            }
+        }))
+        let torf = new  Promise(async(resolve, reject)=>{
+            for (let i = 0; i < 50; i++) {
+                await new Promise((R)=>setTimeout(() => {R(true)}, 100))  
+
+                if (this.cach_message.data_base.creat_base) {
+                    resolve(true)
+                }
+                if (! this.cach_message.login) {
+                    resolve(false)
+                }
+            }
+            resolve(false)
+        })
+        return torf
+    }
     ECObject(arr, dataA, dataB) {
         let current = dataA;
         for (let i = 0; i < arr.length - 1; i++) {
@@ -207,20 +255,22 @@ class DIBASE {
     }
     help(bool){
         const info = `
+        |===============|
+        |MODULE > DIBASE|
         |=================> General <===================|
-        |   - VERSION  :   1.0.0         BETA           |
+        |   - VERSION  :   1.1.0         BETA           |
         |   - OWNER    :   islamdzl                     |
         |   - DEVLOPER :   islamdzl                     |
         |   - SOURSE   :   closed                       |
         |   - GITHUB   :   https://github.com/islamdzl  |
         |=================> Object Base <=======================================|
-        |.get( path )                   |=> return data                         |
-        |.set(data,||path,||clear_end)  |=> onchange({ dataA , dataB })         |
-        |.setpath(data,path,clear_end)  |=> return new data                     |
-        |.clear ( true/false )          |=> clear all data on data base         |
-        |.change()                      |=> onchange({ {   } , dataB })         |
-        |.load      =  false/true       |=> onload( data ) false && on get data |
-        |.data      = data for database |=> {}   type : Objec/JSON              |
+        |.get( path )                    |=> return data                        |
+        |.set(data,||path,||clear_end)   |=> onchange({ dataA , dataB })        |
+        |.creat_path(data,path,clear end)|=> return new data                    |
+        |.clear ( true/false )           |=> clear all data on data base        |
+        |.change()                       |=> onchange({ {   } , dataB })        |
+        |.load      =  false/true        |=> onload( data ) false && on get data|
+        |.data      = data for database  |=> {}   type : Objec/JSON             |
         |-----------------------------------------------------------------------|
         |path : ["path", "to", "set", "data"]|[ 0 ]  |=> path to location data  |
         |data : {  example : "islamdzl"}             |=> yor data object        |
@@ -230,7 +280,8 @@ class DIBASE {
         |.onchange : Function > ({ dataA:data_before, dataB:data_aftter })      |
         |.onerror  : Function > ("message error")                               |
         |================> Function Tasks <==================================================================|
-        | ECObject( path , dataA , dataB ) > Edite dataA to dataB in path and clear >>> return { new data }  |
+        | creat_data_base('server password ',{ name, password, read_password })     >>> return  true/false   |
+        | object_to_arrey( { } ) > return keys and values arrey                     >>> return {keys,values} |
         | EAObject( path , dataA , dataB ) > Edite dataA to dataB in path           >>> return { new data }  |
         | CPath( data , path , clear_end ) > Creat path on object  | clear_end      >>> return { new data }  |
         | GTPath(data , path )             > Go to locatin path                     >>> return { yor data }  |
@@ -239,7 +290,7 @@ class DIBASE {
         |====================================================================================================|
         `
         if (bool) {
-            console.log(info)
+            this.log('info',info)
             return
         }
         return info

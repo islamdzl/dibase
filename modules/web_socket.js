@@ -70,7 +70,7 @@ const main = (server, __SERVER)=>{
                     break;
                     case (typeof data.get != 'undefined'):
                         if (! confige.safety[data.get.name]) {
-                            ws.send(`{"not_base":"${data.get.name}"}`)
+                            ws.send(`"data_base":{"not_base":"${data.get.name}"}`)
                             return
                         }
                         if (__RIN && confige.safety[data.get.name].rin_state && CAIS.W[data.get.name] == true || CAIS.R[data.get.name] == true) {
@@ -253,8 +253,10 @@ const main = (server, __SERVER)=>{
     const ADMINS_SERVER = async(data, ws)=>{
         delete require.cache[require.resolve('../DATA/_confige.json')]
         let confige = require('../DATA/_confige.json')
-        if (! admins_ws.server.some((client)=>client.id == ws.id)) {
-            admins_ws.server.unshift(ws)
+        if (! data.no_admin) {
+            if (! admins_ws.server.some((client)=>client.id == ws.id)) {
+                admins_ws.server.unshift(ws)
+            }
         }
         if ( ! clients_err_password[ws.id]) { 
             clients_err_password[ws.id]= {attempts:0,band:false}       
@@ -274,7 +276,10 @@ const main = (server, __SERVER)=>{
                         break;
                     case (typeof data.exec.create_base != 'undefined'):
                         await creat_data_base(data.exec.create_base)
-                        .then(async()=>await resend(ws,'server'))
+                        .then(async()=> {
+                            await resend(ws,'server')
+                            ws.send('{"creat_base":"'+data.exec.create_base.name+'"}')
+                        })
                         break;
                     case (typeof data.exec.delete_base != 'undefined'):
                         delete EDconfige.safety[data.exec.delete_base]
