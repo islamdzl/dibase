@@ -120,10 +120,14 @@ const main = (server, __SERVER)=>{
                         }
                         break;
                     case (typeof data.admins_server != 'undefined'):
-                        await ADMINS_SERVER(data.admins_server, ws)
+                        try{
+                            await ADMINS_SERVER(data.admins_server, ws)
+                        }catch{ws.send(`{"data_base":{"not_command":"${data.admins_server}"}}`)}
                         break;
                     case (typeof data.admins_base != 'undefined'):
-                        await ADMINS_BASE(data.admins_base, ws)
+                        try{
+                            await ADMINS_BASE(data.admins_base, ws)
+                        }catch{ws.send(`{"data_base":{"not_command":"${data.admins_server}"}}`)}
                         break;
                     case (typeof data.set_domain != 'undefined'):
                         ws.id = data.set_domain.id
