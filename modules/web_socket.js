@@ -46,7 +46,7 @@ const main = (server, __SERVER)=>{
             if (!ws_block[ws._id]) {
                 ws_block[ws._id] = {band :false, attempts: confige.__server.password_attempts}
             }
-            // try{
+            try{
                 let CAIS = clients_and_info[ws.id]
                 switch (true) {
                     case (typeof data.set != 'undefined'):
@@ -162,9 +162,9 @@ const main = (server, __SERVER)=>{
                     default:
                         break;
                 }
-            // }catch{
-            //     console.log('skap process !!!')
-            // }
+            }catch{
+                console.log('skap process !!!')
+            }
         })
         ws.on('close' , ()=> {
             ws.diclar = false
