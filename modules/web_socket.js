@@ -133,7 +133,7 @@ const main = (server, __SERVER)=>{
                         ws.id = data.set_domain.id
                         console.log('id : ',data.set_domain.id)
                         let domain_bases = []
-                        if (ws.diclar) {
+                        if (false /*ws.diclar */) {
                             return
                         }
                         if (!clients_and_info[ws.id]) {
