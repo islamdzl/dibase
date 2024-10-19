@@ -70,7 +70,7 @@ const main = (server, __SERVER)=>{
                     break;
                     case (typeof data.get != 'undefined'):
                         if (! confige.safety[data.get.name]) {
-                            ws.send(`"data_base":{"not_base":"${data.get.name}"}`)
+                            ws.send(`"{data_base":{"not_base":"${data.get.name}"}}`)
                             return
                         }
                         if (__RIN && confige.safety[data.get.name].rin_state && CAIS.W[data.get.name] == true || CAIS.R[data.get.name] == true) {
