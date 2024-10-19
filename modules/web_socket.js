@@ -55,8 +55,12 @@ const main = (server, __SERVER)=>{
                         }
                         if (__RIN && confige.safety[data.set.data_base].rin_state && CAIS.W[data.set.data_base] == true) {
                             if (data.set.path || data.set.setpath) {
-                                let DATA_ = await prcess_data.set({dataA:require('../DATA/' + data.set.data_base),dataB:data.set.data,paths:{path:data.set.path, setpath:data.set.setpath}, wss:data_base_clients[data.set.data_base],base_name:data.set.data_base,clear_end:data.set.clear_end, wsid:ws.id})
-                                await file_system.update({file_name:data.set.data_base,data:DATA_})
+                                try{
+                                    let DATA_ = await prcess_data.set({dataA:require('../DATA/' + data.set.data_base),dataB:data.set.data,paths:{path:data.set.path, setpath:data.set.setpath}, wss:data_base_clients[data.set.data_base],base_name:data.set.data_base,clear_end:data.set.clear_end, wsid:ws.id})
+                                    await file_system.update({file_name:data.set.data_base,data:DATA_})
+                                }catch{
+                                    ws.send(`{"data_base":{"not_base":"${data.get.name}"}}`)
+                                }
                                 return
                             }
                                 data_base_clients[data.set.data_base].forEach((client)=>{
@@ -84,18 +88,35 @@ const main = (server, __SERVER)=>{
                                         }
                                     }
                                 }))
+                                try{
+                                    let DATA_ = await prcess_data.get({dataA:require('../DATA/' + data.get.name),path:data.get.path})
+                                    ws.send(JSON.stringify({
+                                        data_base:{
+                                            get:{
+                                                name:data.get.name,
+                                                data:DATA_
+                                            }
+                                        }
+                                    }))
+                                }catch{
+                                    ws.send(`{"data_base":{"not_base":"${data.get.name}"}}`)
+                                }
                                 return
                             }
-                            delete require.cache[require.resolve('../DATA/' + data.get.name)]
-                            let all_data = await require('../DATA/' + data.get.name)
-                            ws.send(JSON.stringify({
-                                data_base:{
-                                    get:{
-                                        name:data.get.name,
-                                        data:all_data
+                            try{
+                                delete require.cache[require.resolve('../DATA/' + data.get.name)]
+                                let all_data = await require('../DATA/' + data.get.name)
+                                ws.send(JSON.stringify({
+                                    data_base:{
+                                        get:{
+                                            name:data.get.name,
+                                            data:all_data
+                                        }
                                     }
-                                }
-                            }))
+                                }))
+                            }catch{
+                                ws.send(`{"data_base":{"not_base":"${data.get.name}"}}`)
+                            }
                         }
                         break;
                     case (typeof data.admins_server != 'undefined'):
