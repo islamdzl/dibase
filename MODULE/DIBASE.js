@@ -37,13 +37,20 @@ class DIBASE {
         this.socket.onmessage = async(message)=>{
             const data = JSON.parse(message.data)
             this.cach_message = data
-            console.log(">> message : ",JSON.stringify(data))
+            // console.log(">> message : ",JSON.stringify(data))
             if (data.data_base) {
                 switch (true) {
                     case (typeof data.data_base.get != "undefined"):
                         if (data.data_base.get.path) {
                             let beforedata = this.base[data.data_base.get.name].data
-                            let newdata = data.data_base.get.clear_end ? this.ECObject(data.data_base.get.path,this.base[data.data_base.get.name].data, data.data_base.get.data):this.EAObject(data.data_base.get.path,this.base[data.data_base.get.name].data, data.data_base.get.data)
+                            let newdata = this.base[data.data_base.get.name].data
+                            if (Array.isArray(data.data_base.get.path[0])) {
+                                data.data_base.get.path[0].forEach((arr)=>{
+                                    newdata = data.data_base.get.clear_end ? this.ECObject(arr, newdata, data.data_base.get.data):this.EAObject(arr, newdata, data.data_base.get.data)
+                                })
+                            }else{
+                                newdata = data.data_base.get.clear_end ? this.ECObject(data.data_base.get.path,this.base[data.data_base.get.name].data, data.data_base.get.data):this.EAObject(data.data_base.get.path,this.base[data.data_base.get.name].data, data.data_base.get.data)
+                            }
                             this.base[data.data_base.get.name].data = newdata
                             if (! this.base[data.data_base.get.name].load) {
                                 this.base[data.data_base.get.name].onload(newdata)
@@ -66,9 +73,11 @@ class DIBASE {
                             break;
                         }
                     }
-                    if (data.data_base.not_base) {
-                        this.log('error',`Not data base name : ${data.data_base.not_base}\nDifficulty in communication/access`)
-                        this.base[data.data_base.not_base].onerror({ base_not_access : true })
+                    if (data.data_base) {
+                        if (data.data_base.not_base) {
+                            this.log('error',`Not data base name : ${data.data_base.not_base}\n        Difficulty in communication/access`)
+                            this.base[data.data_base.not_base].onerror({ base_not_access : true })
+                        }
                     }
                     if (data.type == 'server' && !data.login) {
                         this.log('error',`Error in server password!`)
@@ -106,13 +115,19 @@ class DIBASE {
                     // console.log('sended')
                 },
                 get:async(path)=>{
-                    if (path) {
-                        return this.GTPath(this.base[name].data, path)  
-                    }
+                    let password
+                    this.user_data.domains.forEach((base)=>{
+                        if (base.name == name) {
+                            password = base.password
+                            return
+                        }
+                    })
                     this.socket.send(JSON.stringify({
                         data_base:{
                             get:{
-                                name
+                                password:password,
+                                name:name,
+                                path:path
                             }
                         }
                     }))
@@ -133,7 +148,7 @@ class DIBASE {
                 creat_path:async(path, clear_end)=>{
                     this.socket.send(JSON.stringify({
                         data_base:{
-                            set:{
+                            set:{ 
                                 data_base:name,
                                 setpath:path,
                                 clear_end
@@ -142,7 +157,7 @@ class DIBASE {
                     }))
                     let new_data = await this.CPath(this.base[name].data, path, clear_end)
                     this.base[name].onchange({dataA:this.base[name].data, dataB:new_data})
-                    this.base[name].data = new_data
+                    this.base[name].data = new_data 
                 },
                 change:()=>{
                     this.base[name].onchange({dataA:{},dataB:this.base[name].data})
@@ -175,19 +190,33 @@ class DIBASE {
                 }
             }
         }))
-        let torf = new  Promise(async(resolve, reject)=>{
+        let torf = new  Promise(async(resolve)=>{
             for (let i = 0; i < 50; i++) {
                 await new Promise((R)=>setTimeout(() => {R(true)}, 100))  
 
-                if (this.cach_message.data_base.creat_base) {
-                    resolve(true)
+                if (this.cach_message) {
+                    if (this.cach_message.creat_base) {
+                        this.socket.send(JSON.stringify({
+                            data_base:{
+                            set_domain:{
+                                id:this.user_data.id,
+                                domains:this.user_data.domains
+                            }
+                        }}))
+                        setTimeout(async() => {
+                            await this.base[this.cach_message.creat_base].get()
+                            resolve(true)
+                        }, 1000);
+                        return
+                    } 
                 }
-                if (! this.cach_message.login) {
-                    resolve(false)
+                if (this.cach_message.login == false) {
+                    resolve(false) 
+                    return
                 }
             }
             resolve(false)
-        })
+        })   
         return torf
     }
     ECObject(arr, dataA, dataB) {
