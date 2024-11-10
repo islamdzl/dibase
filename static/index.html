@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DATA BASE</title>
+    <link rel="stylesheet" href="style/main_page.css">
+</head>
+<body>
+    <div class="tabbar">
+        <input type="button" style="background-color: rgba(0,0,0,0.4);border-color: yellow;margin-right: 5%;" class="buttons" onclick="GET_LOG('server')" value="Server">
+        <input type="button" style="background-color: rgba(0,0,0,0.4);border-color: yellow;margin-left: 5%;" class="buttons"   onclick="GET_LOG('data_bases')" value="Data Base">
+    </div>
+    <hr style="margin: 0;width: 98%;margin-left: auto;margin-right: auto;">
+    <div class="ALL" id="ALL">
+    </div>
+    <script src="script/main_page_pages.js"></script>
+    <script src="/script/main_page.js"></script>
+    <script src="/script/main_page_server.js"></script>
+    <script src="/script/main_page_bases.js"></script>
+    <script src="/script/main_page_socket.js"></script>
+</body>
+</html>

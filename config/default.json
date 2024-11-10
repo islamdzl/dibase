@@ -1,0 +1,20 @@
+{
+    "location_save_group_speed_on_database":["_cloud_group_speed"],
+    "config":{
+        "__server":{
+            "password":"islamdzl" ,
+            "password_attempts":3
+        }, 
+        "data_bases":[],
+        "safety":{}
+    },
+    "path_base_on_config":{
+        "password":"islamdzl",
+        "read_password":"islamdzlr",
+        "name":null,
+        "type":"default",
+        "rin_state":true,
+        "clients":{},
+        "bans":{}
+    }
+}

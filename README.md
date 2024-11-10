@@ -37,157 +37,27 @@ THIS README.MD FILE TO SERVER AND MODULE
 default config file 
 {
     "__server":{
-       "password":"12345678" ,
+       "password":"islamdzl" ,
        "password_attempts":3
     },
     "data_bases":[],
     "safety":{}
 }
-_______________________________________________________
-___________________{ ADMINS SERVER }___________________
-request Server
 
 {
-    "data_base":{
-        "admins_server":{
-            "no_admin":false,
-            "password":"",
-            "exec":{
-        ---------------------------------------
-                "re_password" : "new password"
-        ---------------------------------------
-                "rin_state" : true / false
-        ---------------------------------------
-                "create_base" : { "password":"", "read_password":"", "name":""}
-        ---------------------------------------
-                "delete_base" : "name data base"
-        ---------------------------------------
-                "formate" : "new password"
-        ---------------------------------------
-                "download" : "file name"
-        ---------------------------------------
-        
-            }
+    data_base:{
+
+        set_speed:{
+
         }
-    }
-}
-____________________________________________________
-response Server
+        get_speed:{
 
-{
-    "login":true / false,
-    "type":'data_base'/'server'
-}
-
-{
-    "type":"server",
-    "time":100,
-    "clients_and_info":{},
-    "data_base_clients":{},
-    "confige":{}
-}
-____________________________________________________
-___________________{ ADMINS BASE }__________________
-request Server
-
-{
-    "data_base":{
-        "admins_base":{
-            "password":"yor password",
-            "base":"base name",
-            "exec":{
-        ---------------------------------------
-                "re_password" : {"read_password":"new read password", "password":"new password"}
-        ---------------------------------------
-                "rin_state" : true / false
-        ---------------------------------------
-                "delete_base" : "password"
-        ---------------------------------------
-                "formate" : "password"
-        ---------------------------------------
-        
-            }
         }
-    }
-}
-response Server
 
-{
-    "login":true / false,
-    "type":'data_base'/'server'
-}
-
-{
-    "type":"base",
-    "time":120,
-    "confige_base":{},
-    "clients":[]
-}
-____________________________________________________
-create data base 
-{
-    "data_base":{
-        "password":"server password",
-        "create_base":{
-            "name":"islam",
-            "password":"12345678",
-            "read_password":"1111111"
-        }
-    }
-}
-____________________________________________________
-set data on data_bases     Write
-{
-    "data_base":{
-        "set":{
-            "data_base":"islam",
-            "data":{
-                "name":"islam",
-                "age":17
-            },
-             || path : ["path/to/yor/object"],
-             || "clear_end": true/false
-        }
-    }
-}
-____________
-response 
-
-____________________________________________________
-get data on data_bases     Read
-{
-    "data_base":{
-        "get":{
-            "password":"",
-            "name":"islam",
-             || path : ["path/to/yor/object"],
-             || "clear_end": true/false
-        }
     }
 }
 
-response 
-{
-    "data_base":{
-        "get":{
-            "name":"data base name"
-            "data":{}
-        }
-    }
-}
-
-{
-    "data_base":{
-        "get":{
-            "path":["path/tor/object"]
-            "name":"data base name"
-            "data":{}
-        }
-    }
-}
-____________________________________________________
-====================================================
-on open web socket client
+==================== SET DOMAINS =======================
 {
     "data_base":{
         "set_domain":{
@@ -205,17 +75,162 @@ on open web socket client
         }
     }
 }
-____________________________________________________
- test Ping speed  PING
- {
+==================== GET ================================
+REQUEST :
+{
     "data_base":{
-        "ping":"my"
+        "get":{
+            "password":"",
+            "name":"islam",
+             || path : ["path/to/yor/object"],
+        }
     }
- }
-____________________________________________________
+}
+RESPONSE :
+{
+    "data_base":{
+        "get":{
+            "path":["path/tor/object"]
+            "name":"data base name"
+            "data":{}
+        }
+    }
+}
+==================== SET ===============================
+{
+    "data_base":{
+        "set":{
+            "name":"islam",
+            "data":{
+                "developer":"islamdzl"
+            },
+            "path":["path","to","data","location"],
+            "creat_path":["path","to","data","location"],
+            "resend_me":true,
+            "not_save": false,
+            "clear_end":false
+            "delete":["path","to","data","location"]
+        }
+    }
+}
+RESPONSE : if resend_me  => get()
+==================== GET SPEED =========================
+REQUEST :
+{
+    "data_base":{
+        "get_speed":{
+            "name":"islam",
+            "path": []
+        }
+    }
+}
+RESPONSE :
+{
+    "data_base":{
+        "get_speed":{
+            "name":"islam",
+            "path": [],
+            "data":{}
+        }
+    }
+}
+==================== SET SPEED =========================
+{
+    "data_base":{
+        "set_speed":{
+            "name":"islam",
+            "path": [],
+            "creat_path": [],
+            "cloud" : true,
+            "resend_me":true,
+            "not_save": false,
+            "clear_end":false,
+            "delete":["path","to","data","location"]
+        }
+    }
+}
+==================== CREAT DATA BASE ===================
+request : 
+{
+    "data_base":{
+        "admins_server":{
+            "no_admin":false,
+            "password":"",
+            "exec":{
+                "create_base" : { "password":"", "read_password":"", "name":"", "type":"speed/default"}
+            }
+        }
+    }
+}
+response :
+==================== ADMINS SERVER =====================
+REQUEST:
+{
+    "data_base":{
+        "admins_server":{
+            "no_admin":false,
+            "password":"",
+            "exec":{
+        ---------------------------------------
+                "re_password" : "new password"
+        ---------------------------------------
+                "rin_state" : true / false
+        ---------------------------------------
+                "create_base" : { "password":"", "read_password":"", "name":"", "type":"speed/default"}
+        ---------------------------------------
+                "delete_base" : "name data base"
+        ---------------------------------------
+                "formate" : "new password"
+        ---------------------------------------
+                "download" : "file name"
+        ---------------------------------------
+        
+            }
+        }
+    }
+}
+RESPONSE:
+{
+    "login":true / false,
+    "type":'server'
+}
+==================== ADMINS BASE =======================
+REQUEST:
+{
+    "data_base":{
+        "admins_base":{
+            "password":"yor password",
+            "no_admin":false,
+            "base":"base name",
+            "exec":{
+        ---------------------------------------
+                "re_password" : {"read_password":"new read password", "password":"new password"}
+        ---------------------------------------
+                "rin_state" : true / false
+        ---------------------------------------
+                "delete_base" : "password"
+        ---------------------------------------
+                "formate" : "password"
+        ---------------------------------------
+            }
+        }
+    }
+}
+RESPONSE:
+{
+    "login":true / false,
+    "type":'data_base'
+}
+==================== TEST PING =========================
+{
+    "data_base":{
+        "ping":"me"
+    }
+}
+
+======================= OATH ===========================
 {
     "data_base":{
         "not_base":"data base name"
     }
 }
-____________________________________________________

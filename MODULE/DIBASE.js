@@ -1,328 +1,291 @@
 const Web_Socket = require('ws')
+const processng = require('./processng')
+
 class DIBASE {
     constructor(url ,user_data){
         this.url = url
         this.user_data = user_data
         this.base = {}
-        this.cach_message
-        this.log = (P, message)=>{
-            console[P]('DIBASE :',message)
+        this.wait_change_data_state = false
+        this.server_password = undefined
+        this.module_data = {
+            created_data_base:{},
+            deleted_data_base:{},
         }
         this.socket = new Web_Socket(url)
-            this.socket.onerror = (err)=>{
-                this.log('error','Error connecting on server DIBASE')
-                return
-            }
+        this.sender = ( data )=>{
+            this.socket.send(JSON.stringify({
+                data_base:{
+                    [data.type]:{
+                        ... data
+                    }
+                }
+            }))
+        }
+        this.socket.onerror = (err)=>{
+            processng.log('error','Error connecting on server DIBASE')
+            return
+        }
         this.socket.onopen = ()=>{
             this.socket.send(JSON.stringify({
                 data_base:{
-                set_domain:{
-                    id:this.user_data.id,
-                    domains:this.user_data.domains
+                    set_domain:{
+                        id:this.user_data.id,
+                        domains:this.user_data.domains
+                    }
                 }
-            }}))
+            }))
             user_data.domains.forEach(({name, password})=>{
                 this.socket.send(JSON.stringify({
                     data_base:{
                         get:{
                             password:password,
                             name:name,
+                            code_request:0
                         }
                     }
                 }))
             })
-            this.log('log','Open Data Base Server!')
+            processng.log('log','Open Data Base Server!')
             this.onconnect()
         }
         this.socket.onmessage = async(message)=>{
-            const data = JSON.parse(message.data)
+            const data = JSON.parse(message.data).data_base
             this.cach_message = data
-            // console.log(">> message : ",JSON.stringify(data))
-            if (data.data_base) {
+            // console.log(">> message : ",data)
                 switch (true) {
-                    case (typeof data.data_base.get != "undefined"):
-                        if (data.data_base.get.path) {
-                            let beforedata = this.base[data.data_base.get.name].data
-                            let newdata = this.base[data.data_base.get.name].data
-                            if (Array.isArray(data.data_base.get.path[0])) {
-                                data.data_base.get.path[0].forEach((arr)=>{
-                                    newdata = data.data_base.get.clear_end ? this.ECObject(arr, newdata, data.data_base.get.data):this.EAObject(arr, newdata, data.data_base.get.data)
-                                })
-                            }else{
-                                newdata = data.data_base.get.clear_end ? this.ECObject(data.data_base.get.path,this.base[data.data_base.get.name].data, data.data_base.get.data):this.EAObject(data.data_base.get.path,this.base[data.data_base.get.name].data, data.data_base.get.data)
-                            }
-                            this.base[data.data_base.get.name].data = newdata
-                            if (! this.base[data.data_base.get.name].load) {
-                                this.base[data.data_base.get.name].onload(newdata)
-                                this.base[data.data_base.get.name].load = true
-                            }
-                            this.base[data.data_base.get.name].onchange({dataA:beforedata, dataB:newdata})
-                            return
+                    case(typeof data.get_speed != 'undefined'):
+                        if (data.get_speed.code_request) {
+                            this.base[data.get_speed.name].wait_data[data.get_speed.code_request.path]  (data.get_speed.code_request.code)
                         }
-                        let beforedata = await this.base[data.data_base.get.name].data
-                        this.base[data.data_base.get.name].data = data.data_base.get.data
-                        if (! this.base[data.data_base.get.name].load) {
-                            this.log('info',`Open base : ${data.data_base.get.name}!`)
-                            this.base[data.data_base.get.name].onload(data.data_base.get.data)
-                            this.base[data.data_base.get.name].load = true
-                        }else{
-                            this.base[data.data_base.get.name].onchange({dataA:beforedata, dataB:data.data_base.get.data})
+                        const new_data_speed = await processng.processng_speed(data.get_speed, this.base[data.get_speed.name].data_speed)
+                        if (this.base[data.get_speed.name].AOS) this.base[data.get_speed.name].onspeedr({dataA:this.base[data.get_speed.name].data_speed, dataB: new_data_speed})
+                        this.base[data.get_speed.name].data_speed = new_data_speed
+                        break
+                    case(typeof data.get != 'undefined'):
+                        if (data.get.code_request) {
+                            this.base[data.get.name].wait_data[data.get.code_request.path]              (data.get.code_request.code)
                         }
-                        break;
-                        default:
-                            break;
+                        const new_data_default = await processng.processng(this.base[data.get.name].data, data.get)
+                        if (this.base[data.get.name].AOC) this.base[data.get.name].onchange({dataA:this.base[data.get.name].data, dataB: new_data_default})
+                        this.base[data.get.name].data = new_data_default
+                        if (this.base[data.get.name].load == false && this.base[data.get.name].type === "speed")  {
+                            this.base[data.get.name].get_speed()
+                            this.base[data.get.name].load = true
                         }
-                    }
-                    if (data.data_base) {
-                        if (data.data_base.not_base) {
-                            this.log('error',`Not data base name : ${data.data_base.not_base}\n        Difficulty in communication/access`)
-                            this.base[data.data_base.not_base].onerror({ base_not_access : true })
-                        }
-                    }
-                    if (data.type == 'server' && !data.login) {
-                        this.log('error',`Error in server password!`)
-                    }
+                        break
+                    case (typeof data.data_base.not_base != 'undefined'):
+                        processng.log('error', `not database : ${data.data_base.not_base}`)
+                        this.base[data.data_base.not_base].onerror({not_base:`not database : ${data.data_base.not_base}`})
+                        break 
+                    case (typeof data.data_base.deleted_data_base != 'undefined'):
+                        break
+                    case (typeof data.data_base.created_data_base != 'undefined'):
+                        break
+                    case (typeof data.ping != 'undefined'):
+                        this.ping.test_out(Date.now() - this.ping.ping_test_date_a)
+                        break
+                    default:
+                        console.log('not switch', data)
+                    break
+                }
+            if (data.type == 'server' && !data.login) {
+                processng.log('error',`Error in server password!`)
+            }
         }
-        this.user_data.domains.forEach(({name, password}) => {
-            this.base[name] = {
-                load:false,
-                data:{},
-                set:async (data, path, clear_end)=>{
-                    if (path) {
-                        this.socket.send(JSON.stringify({
-                            data_base:{
-                                set:{
-                                    data_base:name,
-                                    data,
-                                    path,
-                                    clear_end
-                                }
-                            }
-                        }))
-                        let ED = clear_end ? this.ECObject(path, this.base[name].data, data): this.EAObject(path, this.base[name].data, data)
-                        this.base[name].onchange({dataA:this.base[name].data, dataB:ED})
-                        this.base[name].data = ED
+        this.user_data.domains.forEach(({name, password, type}) => {
+            const random_code = (path)=>{
+                return {
+                    code: String(Math.floor(Math.random()* 100000000)), 
+                    path
+                }
+            }
+            const coty_default = {
+            wait_data: {
+                    set_speed        : ()=>{},
+                    get_speed        : ()=>{},
+                    clear_speed      : ()=>{},
+                    cloud_speed      : ()=>{},
+                    creat_paths_speed: ()=>{},
+                    set              : ()=>{},
+                    get              : ()=>{},
+                    clear            : ()=>{},
+                    creat_paths      : ()=>{},
+            },
+            AOC: true,
+            AOS: true,
+            data:{},
+            password,
+            type: type == 'speed' || type == 'SPEED' ? 'speed' : 'default',
+            load: false,
+            // =========================> FUNCTIONS FOR DEFAULTE <====================
+                set:async (data, path, clear_end, resend_me)=>{
+                    if (! (resend_me || this.wait_change_data_state)) {
+                        resend_me = undefined
+                        if (this.base[data.get.name].AOC) this.base[name].onchange({dataA: this.base[name].data, dataB:processng.processng(this.base[name].data, data)})
+                        this.sender({type:"set", name, data, path, clear_end})
                         return
                     }
-                    this.socket.send(JSON.stringify({
-                        data_base:{
-                            set:{
-                                data_base:name,
-                                data
-                            }
-                        }
-                    }))
-                    // console.log('sended')
+                    const code_request = random_code('set')
+                    this.sender({type:"set", name, data, path, clear_end, resend_me, code_request})
+                    if (this.wait_change_data_state) {
+                        return new Promise((resolve)=>{
+                            coty_default.wait_data.set = ( code )=>{if (code == code_request.code) {resolve(code); return}}
+                        })
+                    }
                 },
                 get:async(path)=>{
-                    let password
-                    this.user_data.domains.forEach((base)=>{
-                        if (base.name == name) {
-                            password = base.password
-                            return
-                        }
-                    })
-                    this.socket.send(JSON.stringify({
-                        data_base:{
-                            get:{
-                                password:password,
-                                name:name,
-                                path:path
-                            }
-                        }
-                    }))
+                    const code_request = random_code('get')
+                    this.sender({type:"get", name, path, code_request})
+                    if (this.wait_change_data_state) {                        
+                        return new Promise((resolve)=>{
+                            coty_default.wait_data.get = ( code )=>{if (code == code_request.code) {resolve(code); return}}
+                        })
+                    }
                 },
                 clear:(t)=>{
-                    if (! t) {
-                        return
+                    if (! t) return
+                    const code_request = random_code('clear')
+                    this.sender({type:"set", name, data:{}, clear_end:true, code_request})
+                    if (this.wait_change_data_state) {
+                        return new Promise((resolve)=>{
+                            coty_default.wait_data.clear = ( code )=>{if (code == code_request.code) {resolve(code); return}}
+                        })
                     }
-                    this.socket.send(JSON.stringify({
-                        data_base:{
-                            set:{
-                                data_base:name,
-                                data:{},
-                            }
-                        }
-                    }))
+                },                
+                creat_paths:async(paths, clear_end)=>{
+                    const code_request = random_code('creat_paths')
+                    this.sender({type:"set", name, creat_path:paths, clear_end, code_request})
+                    if (this.wait_change_data_state) {
+                        return new Promise((resolve)=>{
+                            coty_default.wait_data.creat_paths = ( code )=>{if (code == code_request.code) {resolve(code); return}}
+                        })  
+                    }
                 },
-                creat_path:async(path, clear_end)=>{
-                    this.socket.send(JSON.stringify({
-                        data_base:{
-                            set:{ 
-                                data_base:name,
-                                setpath:path,
-                                clear_end
-                            }
-                        }
-                    }))
-                    let new_data = await this.CPath(this.base[name].data, path, clear_end)
-                    this.base[name].onchange({dataA:this.base[name].data, dataB:new_data})
-                    this.base[name].data = new_data 
+                exec_default: async(fun)=>{
+                    this.base[name].AOC = false
+                    await fun()
+                    this.base[name].AOC = true
+                },
+                exec: async(fun)=>{
+                    this.base[name].AOC = false
+                    this.base[name].AOS = false
+                    await fun()
+                    this.base[name].AOC = true
+                    this.base[name].AOS = true
                 },
                 change:()=>{
                     this.base[name].onchange({dataA:{},dataB:this.base[name].data})
                 },
-                onload:()=>{},
-                onchange:()=>{},
-                onerror:()=>{}
+                speedr:()=>{
+                    this.base[name].onspeedr({dataA:{},dataB:this.base[name].data_speed})
+                },
+                onchange : ()=>{},
+                onspeedr : ()=>{},
+                onerror  : ()=>{}
             }
-        });
-        
-
-    }
-    onconnect (){}
-    object_to_arrey(object) {
-        return {keys:new Object.keys(object), values: new Object.values(object)}
-    }
-    creat_data_base(password, data){
-        this.socket.send(JSON.stringify({
-            data_base:{
-                admins_server:{
-                    no_admin:true,
-                    password:password,
-                    exec:{
-                        create_base : { 
-                            password:data.password, 
-                            read_password:data.read_password, 
-                            name:data.name
-                        }
-                    }
-                }
-            }
-        }))
-        let torf = new  Promise(async(resolve)=>{
-            for (let i = 0; i < 50; i++) {
-                await new Promise((R)=>setTimeout(() => {R(true)}, 100))  
-
-                if (this.cach_message) {
-                    if (this.cach_message.creat_base) {
-                        this.socket.send(JSON.stringify({
-                            data_base:{
-                            set_domain:{
-                                id:this.user_data.id,
-                                domains:this.user_data.domains
-                            }
-                        }}))
-                        setTimeout(async() => {
-                            await this.base[this.cach_message.creat_base].get()
-                            resolve(true)
-                        }, 1000);
+        // =========================> FUNCTIONS FOR SPEED  <====================
+            const coty_speed = {
+                data_speed:{},
+                set_speed: async(data, path, clear_end, resend_me)=>{
+                    if (! (resend_me || this.wait_change_data_state)) {
+                        this.sender({type:"set_speed", name, data, path, clear_end})
                         return
-                    } 
-                }
-                if (this.cach_message.login == false) {
-                    resolve(false) 
+                    }
+                    const code_request = random_code('set_speed')
+                    this.sender({type:"set_speed", name, data, path, clear_end, resend_me, code_request})
+                    if (this.wait_change_data_state) {
+                        return new Promise((resolve)=>{
+                            coty_default.wait_data.set_speed = ( code )=>{if(code == code_request.code){resolve(code); return}}
+                        })
+                    }
+                },
+                get_speed: (path)=>{
+                    const code_request = random_code('get_speed')
+                    this.sender({type:"get_speed", name, path, code_request})
+                    if (this.wait_change_data_state) {
+                        return new Promise((resolve)=>{
+                            coty_default.wait_data.get_speed = ( code )=>{if (code == code_request.code) {resolve(code); return}}
+                        }) 
+                    }
+                },
+                clear_speed:(t)=>{
+                    if (! t) return
+                    const code_request = random_code('clear_speed')
+                    this.sender({type:"set_speed", name, data:{}, clear_end:true, code_request})
+                    if (this.wait_change_data_state) {
+                        return new Promise((resolve)=>{
+                            coty_default.wait_data.clear_speed = ( code )=>{if (code == code_request.code) {return resolve(code)}}
+                        })
+                    }
+                },
+                cloud_speed:()=>{
+                    const code_request = random_code('cloud_speed')
+                    this.sender({type:"set_speed", name, cloud: true, code_request})
+                    if (this.wait_change_data_state) {
+                        return new Promise((resolve)=>{
+                            coty_default.wait_data.cloud_speed = ( code )=>{if (code == code_request.code) {resolve(code); return}}
+                        })
+                    }
+                },
+                creat_paths_speed:async(paths, clear_end)=>{
+                    const code_request = random_code('creat_paths_speed')
+                    this.sender({type:"set_speed", name, creat_path:paths, clear_end, code_request})
+                    if (this.wait_change_data_state) {
+                        return new Promise((resolve)=>{
+                            coty_default.wait_data.creat_paths_speed = ( code )=>{if (code == code_request.code) {resolve(code); return}}
+                        })
+                    }
+                },
+                exec_speed: async(fun)=>{
+                    this.base[name].AOS = false
+                    await fun()
+                    this.base[name].AOS = true
+                },
+            }
+            // =========================> OBJECT <====================
+            this.base[name] = type == 'speed' || type == 'SPEED' ? {... coty_default, ... coty_speed} : coty_default
+        }); 
+    }
+    // constructor is ended ! =============================
+    ping = {
+        ping_test_date_a: undefined,
+        test:()=>{
+            this.ping_test_date_a = Date.now()
+            this.socket.send(JSON.stringify({data_base:{ping:this.user_data.id}}))
+        },
+        test_out:()=>{},
+    }
+    onconnect  () {}
+    onerror    () {}
+    go_to_path (data, path) {
+        return processng.GTPath(data, path)
+    }
+    creat_data_base(server_password, {base_name, password, read_password, type}) {
+        if (this.server_password) server_password = this.server_password
+        processng.creat_data_base(this.socket, server_password, {read_password:read_password,password:password, name:base_name, type:type})
+        return new Promise((resolve)=>{
+            let interval = setInterval(() => {
+                if (this.module_data.created_data_base[base_name]) {
+                    resolve(true)
+                    clearInterval(interval)
                     return
                 }
-            }
-            resolve(false)
-        })   
-        return torf
-    }
-    ECObject(arr, dataA, dataB) {
-        let current = dataA;
-        for (let i = 0; i < arr.length - 1; i++) {
-            const key = arr[i];
-            if (typeof current[key] !== 'object' || current[key] === null) {
-                current[key] = typeof arr[i + 1] === 'number' ? [] : {};
-            }
-            current = current[key];
-        }
-        const lastKey = arr[arr.length - 1];
-        if (typeof lastKey === 'number') {
-            current[lastKey] = [dataB];
-        } else {
-            current[lastKey] = dataB;
-        }
-        return dataA;
-    }
-    EAObject(arr, dataA, dataB) {
-        let current = dataA;
-        for (let i = 0; i < arr.length - 1; i++) {
-            const key = arr[i];
-            if (typeof current[key] !== 'object' || current[key] === null) {
-                current[key] = typeof arr[i + 1] === 'number' ? [] : {};
-            }
-            current = current[key];
-        }
-        const lastKey = arr[arr.length - 1];
-        if (typeof current[lastKey] === 'object' && current[lastKey] !== null) {
-            current[lastKey] = Object.assign(current[lastKey], dataB);
-        } else {
-            current[lastKey] = dataB;
-        }
-        return dataA;
-    }
-    CPath(data, path, clear_end) {
-        path.reduce((acc, key, index) => {
-            if (index === path.length - 1) {
-                acc[key] = clear_end ? {} : (acc[key] || {});
-            } else {
-                acc[key] = acc[key] || {};
-            }
-            return acc[key];
-        }, data);
-        return data;
-    };
-    GTPath(data, path){
-        if (!this.IPath(data, path)) {
-            return
-        }
-        path.forEach((p)=>{
-            data = data[p]
+            }, 100);
         })
-        return data
     }
-    IPath(data, path){
-        for (let i = 0; i < path.length; i++) { 
-            if (! data[path[i]]) {
-                return false
-            }
-            data = data[path[i]]
-        }
-        return true
-    }
-    help(bool){
-        const info = `
-        |===============|
-        |MODULE > DIBASE|
-        |=================> General <===================|
-        |   - VERSION  :   1.1.0         BETA           |
-        |   - OWNER    :   islamdzl                     |
-        |   - DEVLOPER :   islamdzl                     |
-        |   - SOURSE   :   closed                       |
-        |   - GITHUB   :   https://github.com/islamdzl  |
-        |=================> Object Base <=======================================|
-        |.get( path )                    |=> return data                        |
-        |.set(data,||path,||clear_end)   |=> onchange({ dataA , dataB })        |
-        |.creat_path(data,path,clear end)|=> return new data                    |
-        |.clear ( true/false )           |=> clear all data on data base        |
-        |.change()                       |=> onchange({ {   } , dataB })        |
-        |.load      =  false/true        |=> onload( data ) false && on get data|
-        |.data      = data for database  |=> {}   type : Objec/JSON             |
-        |-----------------------------------------------------------------------|
-        |path : ["path", "to", "set", "data"]|[ 0 ]  |=> path to location data  |
-        |data : {  example : "islamdzl"}             |=> yor data object        |
-        |clear_end  : true/false                     |=> to clear end object    |
-        |-----------------------------------------------------------------------|
-        |.onload   : Function > ( data )                                        |
-        |.onchange : Function > ({ dataA:data_before, dataB:data_aftter })      |
-        |.onerror  : Function > ("message error")                               |
-        |================> Function Tasks <==================================================================|
-        | creat_data_base('server password ',{ name, password, read_password })     >>> return  true/false   |
-        | object_to_arrey( { } ) > return keys and values arrey                     >>> return {keys,values} |
-        | EAObject( path , dataA , dataB ) > Edite dataA to dataB in path           >>> return { new data }  |
-        | CPath( data , path , clear_end ) > Creat path on object  | clear_end      >>> return { new data }  |
-        | GTPath(data , path )             > Go to locatin path                     >>> return { yor data }  |
-        | IPath( data , path )             > Check in path on data                  >>> return true/false    |
-        | help( true/false )               > Return this info|if true print console >>> return  string       |
-        |====================================================================================================|
-        `
-        if (bool) {
-            this.log('info',info)
-            return
-        }
-        return info
+    delete_data_base(server_password, {base_name}) {
+        if (this.server_password) server_password = this.server_password
+        processng.delete_data_base(this.socket, server_password, base_name)
+        return new Promise((resolve)=>{
+            let interval = setInterval(() => {
+                if (this.module_data.deleted_data_base[base_name]) {
+                    resolve(true)
+                    clearInterval(interval)
+                    return
+                }
+            }, 100);
+        })
     }
 }
 module.exports = DIBASE
