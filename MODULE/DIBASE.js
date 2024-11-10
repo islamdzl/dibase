@@ -74,13 +74,13 @@ class DIBASE {
                             this.base[data.get.name].load = true
                         }
                         break
-                    case (typeof data.data_base.not_base != 'undefined'):
-                        processng.log('error', `not database : ${data.data_base.not_base}`)
-                        this.base[data.data_base.not_base].onerror({not_base:`not database : ${data.data_base.not_base}`})
+                    case (typeof data.not_base != 'undefined'):
+                        processng.log('error', `not database : ${data.not_base}`)
+                        this.base[data.not_base].onerror({not_base:`not database : ${data.not_base}`})
                         break 
-                    case (typeof data.data_base.deleted_data_base != 'undefined'):
+                    case (typeof data.deleted_data_base != 'undefined'):
                         break
-                    case (typeof data.data_base.created_data_base != 'undefined'):
+                    case (typeof data.created_data_base != 'undefined'):
                         break
                     case (typeof data.ping != 'undefined'):
                         this.ping.test_out(Date.now() - this.ping.ping_test_date_a)
@@ -177,11 +177,7 @@ class DIBASE {
                 change:()=>{
                     this.base[name].onchange({dataA:{},dataB:this.base[name].data})
                 },
-                speedr:()=>{
-                    this.base[name].onspeedr({dataA:{},dataB:this.base[name].data_speed})
-                },
                 onchange : ()=>{},
-                onspeedr : ()=>{},
                 onerror  : ()=>{}
             }
         // =========================> FUNCTIONS FOR SPEED  <====================
@@ -242,6 +238,10 @@ class DIBASE {
                     await fun()
                     this.base[name].AOS = true
                 },
+                speedr:()=>{
+                    this.base[name].onspeedr({dataA:{},dataB:this.base[name].data_speed})
+                },
+                onspeedr : ()=>{},
             }
             // =========================> OBJECT <====================
             this.base[name] = type == 'speed' || type == 'SPEED' ? {... coty_default, ... coty_speed} : coty_default

@@ -1,38 +1,60 @@
 THIS README.MD FILE TO SERVER AND MODULE
 
-        |===============|
-        |MODULE > DIBASE|
-        |=================> General <===================|
-        |   - VERSION  :   1.1.0         BETA           |
-        |   - OWNER    :   islamdzl                     |
-        |   - DEVLOPER :   islamdzl                     |
-        |   - SOURSE   :   closed                       |
-        |   - GITHUB   :   https://github.com/islamdzl  |
-        |=================> Object Base <=======================================|
-        |.get( path )                    |=> return data                        |
-        |.set(data,||path,||clear_end)   |=> onchange({ dataA , dataB })        |
-        |.creat_path(data,path,clear end)|=> return new data                    |
-        |.clear ( true/false )           |=> clear all data on data base        |
-        |.change()                       |=> onchange({ {   } , dataB })        |
-        |.load      =  false/true        |=> onload( data ) false && on get data|
-        |.data      = data for database  |=> {}   type : Objec/JSON             |
-        |-----------------------------------------------------------------------|
-        |path : ["path", "to", "set", "data"]|[ 0 ]  |=> path to location data  |
-        |data : {  example : "islamdzl"}             |=> yor data object        |
-        |clear_end  : true/false                     |=> to clear end object    |
-        |-----------------------------------------------------------------------|
-        |.onload   : Function > ( data )                                        |
-        |.onchange : Function > ({ dataA:data_before, dataB:data_aftter })      |
-        |.onerror  : Function > ("message error")                               |
-        |================> Function Tasks <==================================================================|
-        | creat_data_base('server password ',{ name, password, read_password })     >>> return  true/false   |
-        | object_to_arrey( { } ) > return keys and values arrey                     >>> return {keys,values} |
-        | EAObject( path , dataA , dataB ) > Edite dataA to dataB in path           >>> return { new data }  |
-        | CPath( data , path , clear_end ) > Creat path on object  | clear_end      >>> return { new data }  |
-        | GTPath(data , path )             > Go to locatin path                     >>> return { yor data }  |
-        | IPath( data , path )             > Check in path on data                  >>> return true/false    |
-        | help( true/false )               > Return this info|if true print console >>> return  string       |
-        |====================================================================================================|
+    |=================> General <===================|
+    |   - VERSION  :   2.0.0         BETA           |
+    |   - OWNER    :   islamdzl                     |
+    |   - DEVLOPER :   islamdzl                     |
+    |   - SOURSE   :   closed                       |
+    |   - GITHUB   :   https://github.com/islamdzl  |
+    |=================> Object Base <======================================================|
+    |>               Functions                  <|>            Actions          <|> Await <|
+    |.get (path)                                 |=> return data                 |   yes   | 
+    |.set (data,||path,||clear_end)              |=> onchange({ dataA , dataB }) |   yes   |
+    |.creat_paths ([path, path])                 |=> onchange({ dataA , dataB }) |   yes   |
+    |.clear ( true/false )                       |=> clear all data on data base |   yes   |
+    |.change ()                                  |=> onchange({ {   } , dataB }) |   no    |
+    |--------------------> speed                 |                               |         |
+    |.get_speed (data,||path,||clear_end)        |=> onchange({ dataA , dataB }) |   yes   |
+    |.set_speed (data,||path,||clear_end)        |=> onchange({ dataA , dataB }) |   yes   |
+    |.clear_speed (data,||path,||clear_end)      |=> onchange({ dataA , dataB }) |   yes   |
+    |.cloud_speed (data,||path,||clear_end)      |=> onchange({ dataA , dataB }) |   yes   |
+    |.creat_paths_speed ([path, path])           |=> onchange({ dataA , dataB }) |   yes   |
+    |.exec_speed ((null)=>{ </code> })           |=> onchange({ dataA , dataB }) |   yes   |
+    |.speedr ()                                  |=> onspeedr({ {   } , dataB }) |   no    |
+    |--------------------------------------------------------------------------------------|
+    |.AOC        = refriching for onchange       |=> true/false                            |
+    |.AOS        = refriching for onspeedr       |=> true/false                            |
+    |.data       = data for database             |=> {}   type : Objec/JSON                |
+    |.data_speed = data speed for database       |=> {}   type : Objec/JSON                |
+    |.password   = password for database         |=> "password-reader/writer"              |
+    |.type       = type for database             |=> "speed"/"default"                     |
+    |.load       = false and on load data = true |=> true/false                            |
+    |--------------------------------------------------------------------------------------|
+    |path : ["path", "to", "set", "data"]        |=> path to location data                 |
+    |data : {  example : "islamdzl"}             |=> yor data object                       |
+    |clear_end  : true/false                     |=> to clear end object                   |
+    |------------------------> more              |                                         |
+    |not_save   : true/false                     |=> save data on database                 |
+    |resend_me  : true/false                     |=> await resend me data                  |
+    |--------------------------------------------------------------------------------------|
+    |.onerror  : Function > ("message error")    |=> message error for database         |
+    |.onchange : Function > ({ dataA:data_before, dataB:data_aftter }) | for default    |
+    |.onspeedr : Function > ({ dataA:data_before, dataB:data_aftter }) | for speed      |
+    |================> Function Tasks On File Processing Data <=========================================================|
+    | processing     ( dataA , dataB )   default processing for data                  >>> return { new data }           |
+    | processng_speed( data  , dataA )   speed processing for data                    >>> return { new data }           |
+    | ECObject( path , dataA , dataB ) > Edite dataA to dataB in path and clear       >>> return { new data }           |
+    | EAObject( path , dataA , dataB ) > Edite dataA to dataB in path                 >>> return { new data }           |
+    | CPath( data , path , clear_end ) > Creat path on object  | clear_end            >>> return { new data }           |
+    | GTPath          ( data , path )             > Go to locatin path                >>> return { yor data }           |
+    | IPath           ( data , path )             > Check in path on data             >>> return true/false             |
+    | creat_path ( data , path , clear_end )      > creat_path on object              >>> return { new data }           |
+    | delete_         ( data , path )             > delete path on data               >>> return { new data }           |
+    | creat_data_base (socket , password , data)  > creat new data base               >>> return null                   |
+    | delete_data_base(socket , password , name)  > delete data base                  >>> return null                   |
+    | object_to_arrey ( data , path )             > convert to 2 array [keys, values] >>> return { keys:[], values:[] } |
+    | help( true/false )               > Return this info|if true print console       >>> return  string                |
+    |===================================================================================================================|
 
 default config file 
 {

@@ -9,8 +9,7 @@ const ADMINS_BASE = async(data, ws)=>{
     let resend = require('./admins_resend')
     let globale_varibles = require('./globale_varibles')
     let ban_info = globale_varibles.ban[ws._id]
-
-
+    if (! config.safety[data.base]) return
     if (! data.no_admin) {
         if (! globale_varibles.admins_ws.bases[data.base]) {
             globale_varibles.admins_ws.bases[data.base] = {}

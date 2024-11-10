@@ -18,7 +18,6 @@ const creat_data_base = async(data)=>{
             defaultjson.path_base_on_config.password = data.password
             defaultjson.path_base_on_config.type = data.type == "speed" ?  'speed' : 'default'
             config.safety[data.name] = defaultjson.path_base_on_config
-            console.log('CONFIGE'+JSON.stringify(config))
             FMC.create_file('_config', config)
             FMB.create_file(data.name)
             resolve(true)

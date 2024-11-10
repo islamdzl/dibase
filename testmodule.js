@@ -27,9 +27,16 @@ database.onchange = async({dataA, dataB})=>{
     // await database.set({N: dataB.path.to.numbers.N + 1}, ['path', 'to', 'numbers'])
     // console.log(dataB.path.to.numbers)
 }      
-database.onerror = async({ base_not})=>{
-    if (base_not) {
-
+database.onerror = async({ not_base})=>{
+    if (not_base) {
+        database.exec(async()=>{
+            await DIB.creat_data_base(undefined, {
+                base_name:"islam",
+                password:"islam",
+                read_password:"islamr",
+                type:"speed"
+            })
+        })
     }
 }
 DIB.onconnect = async()=>{
