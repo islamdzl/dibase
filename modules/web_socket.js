@@ -17,7 +17,7 @@ const main = (server, __SERVER)=>{
                 ws.send('Error Parsing yor data')
                 return
             }
-            // console.log('new message : ', data)
+            console.log('new message : ', data)
 
             // try{
                 switch (true) {

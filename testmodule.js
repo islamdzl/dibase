@@ -11,7 +11,8 @@ const domains = {
         }
     ] 
 }
-const DIB = new DIBASE('ws://localhost:2007',domains)
+// const DIB = new DIBASE('ws://localhost:2007',domains)
+const DIB = new DIBASE('wss://dibaseservice.onrender.com/',domains)
 DIB.wait_change_data_state = true
 const paths = [['a1','a2','a3','a4','a5'],['b1','b2','b3','b4','b5'],['c1','c2','c3','c4','c5']]
 // DIB.help(true)

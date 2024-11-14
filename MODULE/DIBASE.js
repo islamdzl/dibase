@@ -1,5 +1,5 @@
 const Web_Socket = require('ws')
-const processng = require('./processng')
+const processng = require('./module_processng.js')
 
 class DIBASE {
     constructor(url ,user_data){
