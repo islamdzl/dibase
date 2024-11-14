@@ -121,6 +121,7 @@ const creat_path = (data, path, clear_end) => {
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< IPath
 
 const IPath = (data, path)=>{
+    if (path.length == 0)return false
     for (let i = 0; i < path.length; i++) { 
         if (! data[path[i]]) {
             return false
@@ -133,7 +134,7 @@ const IPath = (data, path)=>{
 
 const GTPath = (data, path)=>{
     if (!IPath(data, path)) {
-        return
+        return data
     }
     path.forEach((p)=>{
         data = data[p]
@@ -143,7 +144,17 @@ const GTPath = (data, path)=>{
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< delete
 
 const delete_ = (dataA, path)=>{
-    return ECObject(path, dataA, {} , true)
+    if (path.length == 1) {
+        delete dataA[path[0]]
+        return dataA        
+    }
+    if (! IPath(dataA, path)) {
+        return dataA
+    }
+    const path_pop = path.slice(0, path.length -1)
+    let newdata = GTPath(dataA, path_pop)
+    delete newdata[path[path.length-1]]
+    return ECObject(path_pop, dataA, newdata , true, true)
 }
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< places
 

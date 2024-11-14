@@ -9,8 +9,8 @@ class DIBASE {
         this.wait_change_data_state = false
         this.server_password = undefined
         this.module_data = {
-            created_data_base:{},
-            deleted_data_base:{},
+            created_data_base:()=>{},
+            deleted_data_base:()=>{},
         }
         this.socket = new Web_Socket(url)
         this.sender = ( data )=>{
@@ -79,8 +79,10 @@ class DIBASE {
                         this.base[data.not_base].onerror({not_base:`not database : ${data.not_base}`})
                         break 
                     case (typeof data.deleted_data_base != 'undefined'):
+                        this.module_data.deleted_data_base(data.deleted_data_base)
                         break
                     case (typeof data.created_data_base != 'undefined'):
+                        this.module_data.created_data_base(data.created_data_base)
                         break
                     case (typeof data.ping != 'undefined'):
                         this.ping.test_out(Date.now() - this.ping.ping_test_date_a)
@@ -109,6 +111,7 @@ class DIBASE {
                     creat_paths_speed: ()=>{},
                     set              : ()=>{},
                     get              : ()=>{},
+                    delete            : ()=>{},
                     clear            : ()=>{},
                     creat_paths      : ()=>{},
             },
@@ -122,13 +125,13 @@ class DIBASE {
                 set:async (data, path, clear_end, resend_me)=>{
                     if (! (resend_me || this.wait_change_data_state)) {
                         resend_me = undefined
-                        if (this.base[data.get.name].AOC) this.base[name].onchange({dataA: this.base[name].data, dataB:processng.processng(this.base[name].data, data)})
+                        if (this.base[name].AOC) this.base[name].onchange({dataA: this.base[name].data, dataB:processng.processng(this.base[name].data, data)})
                         this.sender({type:"set", name, data, path, clear_end})
                         return
                     }
                     const code_request = random_code('set')
                     this.sender({type:"set", name, data, path, clear_end, resend_me, code_request})
-                    if (this.wait_change_data_state) {
+                    if (resend_me || this.wait_change_data_state) {
                         return new Promise((resolve)=>{
                             coty_default.wait_data.set = ( code )=>{if (code == code_request.code) {resolve(code); return}}
                         })
@@ -160,6 +163,21 @@ class DIBASE {
                         return new Promise((resolve)=>{
                             coty_default.wait_data.creat_paths = ( code )=>{if (code == code_request.code) {resolve(code); return}}
                         })  
+                    }
+                },
+                delete_path:async(path, resend_me)=>{
+                    if (! (resend_me || this.wait_change_data_state)) {
+                        resend_me = undefined
+                        if (this.base[name].AOC) this.base[name].onchange({dataA: this.base[name].data, dataB:processng.processng(this.base[name].data, data)})
+                        this.sender({type:"set", name, delete:path})
+                        return
+                    }
+                    const code_request = random_code('delete')
+                    this.sender({type:"set", name, delete:path, code_request,resend_me})
+                    if (resend_me || this.wait_change_data_state) {
+                        return new Promise((resolve)=>{
+                            coty_default.wait_data.delete = ( code )=>{if (code == code_request.code) {resolve(code); return}}
+                        })
                     }
                 },
                 exec_default: async(fun)=>{
@@ -261,30 +279,26 @@ class DIBASE {
     go_to_path (data, path) {
         return processng.GTPath(data, path)
     }
-    creat_data_base(server_password, {base_name, password, read_password, type}) {
+    create_data_base(server_password, {base_name, password, read_password, type}) {
         if (this.server_password) server_password = this.server_password
         processng.creat_data_base(this.socket, server_password, {read_password:read_password,password:password, name:base_name, type:type})
         return new Promise((resolve)=>{
-            let interval = setInterval(() => {
-                if (this.module_data.created_data_base[base_name]) {
+            this.module_data.created_data_base = ( name_base )=>{
+                if (base_name == name_base) {
                     resolve(true)
-                    clearInterval(interval)
-                    return
                 }
-            }, 100);
+            }
         })
     }
-    delete_data_base(server_password, {base_name}) {
+    delete_data_base(server_password, { base_name }) {
         if (this.server_password) server_password = this.server_password
         processng.delete_data_base(this.socket, server_password, base_name)
         return new Promise((resolve)=>{
-            let interval = setInterval(() => {
-                if (this.module_data.deleted_data_base[base_name]) {
+            this.module_data.deleted_data_base = ( name_base )=>{
+                if (base_name  == name_base) {
                     resolve(true)
-                    clearInterval(interval)
-                    return
                 }
-            }, 100);
+            }
         })
     }
 }
