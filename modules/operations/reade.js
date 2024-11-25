@@ -12,12 +12,14 @@ const read = async(data, ws)=>{
             }))
             return
         }
-        data.data = require(`../../BASES/${data.name}.json`)
-        ws.send(JSON.stringify({
-            data_base:{
+        try{
+            data.data = require(`../../BASES/${data.name}.json`)
+            ws.send(JSON.stringify({
+                data_base:{
                 get:data
-            }
-        }))
+              }
+            }))
+        }catch{}
     }
 }
 const get_speed = (data, ws)=>{
