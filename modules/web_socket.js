@@ -31,10 +31,10 @@ const main = (server, __SERVER)=>{
                         system.set_domains(data.set_domain, ws)
                         break
                     case (typeof data.set           != 'undefined'):
-                        system.set(data.set, ws)
+                        await system.set(data.set, ws)
                         break
                     case (typeof data.get           != 'undefined'):
-                        system.get(data.get, ws)
+                        await system.get(data.get, ws)
                         break
                     case (typeof data.admins_base   != 'undefined'):
                         admins_base(data.admins_base, ws)

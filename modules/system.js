@@ -10,19 +10,19 @@ const delete_client = ()=>{
 }
 const get_speed = async(data, ws)=>{
     const type = await verify_client(data, ws)
-    readr.get_speed(data, ws,)
+    await readr.get_speed(data, ws,)
 }
 const set_speed = async(data, ws)=>{
     const type = await verify_client(data, ws)
-    writr.set_speed(data, ws)
+    await writr.set_speed(data, ws)
 }
 const set = async(data, ws)=>{
     const type = await verify_client(data, ws)
-    writr.write(data, ws,)
+    await writr.write(data, ws,)
 }
 const get = async(data, ws)=>{
     const type = await verify_client(data, ws)
-    readr.read(data, ws)
+    await readr.read(data, ws)
 }
 // ===================================> pabluc <===========================
 const verify_client = async(data, ws)=>{
